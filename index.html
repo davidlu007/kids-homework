@@ -44,9 +44,26 @@
             margin-bottom: 10px;
         }
 
+        .current-date {
+            font-size: 18px;
+            margin-bottom: 8px;
+            opacity: 0.95;
+        }
+
         .stats {
             font-size: 16px;
             opacity: 0.9;
+        }
+
+        .view-calendar-btn {
+            margin-top: 10px;
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
         }
 
         .kid-switch {
@@ -114,6 +131,11 @@
         .check-item.checked {
             background: #e8f5e9;
             border-color: #4caf50;
+        }
+
+        .check-item.disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
 
         .check-box {
@@ -192,9 +214,31 @@
             font-weight: bold;
         }
 
-        .reset-btn {
+        .submit-btn {
             width: 100%;
             margin-top: 15px;
+            padding: 12px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .submit-btn:hover {
+            background: #388e3c;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .reset-btn {
+            width: 100%;
+            margin-top: 10px;
             padding: 12px;
             background: #ff6b6b;
             color: white;
@@ -345,6 +389,97 @@
         .today-clear.show {
             display: block;
         }
+
+        /* 日历弹窗 */
+        .calendar-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .calendar-modal.show {
+            display: flex;
+        }
+
+        .calendar-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .calendar-nav button {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 8px;
+            background: #e3f2fd;
+            cursor: pointer;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendar-weekday {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .calendar-day {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        .calendar-day.checked {
+            background: #4caf50;
+            color: white;
+        }
+
+        .calendar-day.today {
+            border: 2px solid #2196f3;
+        }
+
+        .close-calendar {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="level-0">
@@ -352,10 +487,12 @@
     <div class="container">
         <div class="header">
             <h1>🌟 作业打卡 🌟</h1>
+            <div class="current-date" id="current-date"></div>
             <div class="stats">
                 <span id="total-days"></span>
                 <div id="level-badge-container"></div>
             </div>
+            <button class="view-calendar-btn" onclick="openCalendar()">📅 查看历史打卡</button>
         </div>
 
         <div class="kid-switch">
@@ -366,11 +503,28 @@
         <div class="checklist">
             <div id="today-clear" class="today-clear">🎉 今日全部完成！太棒了！🎉</div>
             <div id="check-items"></div>
+            <button class="submit-btn" id="submit-btn" onclick="submitToday()">✅ 提交今日打卡</button>
             <button class="reset-btn" onclick="resetToday()">🔄 重置今日打卡</button>
         </div>
 
         <div class="encouragement" id="encouragement">
             <div class="encouragement-text" id="encouragement-text"></div>
+        </div>
+    </div>
+
+    <!-- 日历弹窗 -->
+    <div class="calendar-modal" id="calendar-modal">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <span id="calendar-month"></span>
+                <div class="calendar-nav">
+                    <button onclick="prevMonth()">◀</button>
+                    <button onclick="nextMonth()">▶</button>
+                </div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+            </div>
+            <button class="close-calendar" onclick="closeCalendar()">关闭</button>
         </div>
     </div>
 
@@ -424,7 +578,9 @@
             { min: 201, max: 9999, badge: '👑 传奇打卡王', level: 5 }
         ];
 
+        const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
         let currentKid = 'xiuxiu';
+        let currentCalendarDate = new Date();
         let data = loadData();
 
         // 加载数据
@@ -434,8 +590,20 @@
                 return JSON.parse(saved);
             }
             return {
-                xiuxiu: { totalDays: 0, lastDate: null, today: {} },
-                xiaoyan: { totalDays: 0, lastDate: null, today: {} }
+                xiuxiu: { 
+                    totalDays: 0, 
+                    lastDate: null, 
+                    today: {}, 
+                    submitted: false,
+                    history: {} // 日期字符串: 是否完成
+                },
+                xiaoyan: { 
+                    totalDays: 0, 
+                    lastDate: null, 
+                    today: {}, 
+                    submitted: false,
+                    history: {}
+                }
             };
         }
 
@@ -447,6 +615,20 @@
         // 获取今天日期字符串
         function getToday() {
             return new Date().toDateString();
+        }
+
+        // 获取年月日键
+        function getDateKey(date) {
+            return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        }
+
+        // 格式化显示日期
+        function formatDateDisplay(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const week = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][date.getDay()];
+            return `${year}年${month}月${day}日 ${week}`;
         }
 
         // 切换孩子
@@ -463,6 +645,9 @@
             const items = config[currentKid].items;
             const today = getToday();
 
+            // 显示当前日期
+            document.getElementById('current-date').textContent = formatDateDisplay(new Date());
+
             // 如果日期变了，重置今日状态，如果全部完成过就累计天数
             if (kidData.lastDate !== today) {
                 checkAndIncrementTotal();
@@ -475,7 +660,7 @@
             items.forEach(item => {
                 const isChecked = kidData.today[item.id] || false;
                 const div = document.createElement('div');
-                div.className = `check-item ${isChecked ? 'checked' : ''} ${item.special ? 'special-item' : ''}`;
+                div.className = `check-item ${isChecked ? 'checked' : ''} ${item.special ? 'special-item' : ''} ${kidData.submitted ? 'disabled' : ''}`;
                 div.innerHTML = `
                     <div class="check-box">${isChecked ? '✓' : ''}</div>
                     <div class="check-text">
@@ -483,9 +668,14 @@
                         ${item.special ? '<span class="badge">特色课</span>' : ''}
                     </div>
                 `;
-                div.onclick = () => toggleItem(item.id);
+                if (!kidData.submitted) {
+                    div.onclick = () => toggleItem(item.id);
+                }
                 container.appendChild(div);
             });
+
+            // 更新提交按钮状态
+            document.getElementById('submit-btn').disabled = kidData.submitted;
 
             // 更新统计
             updateStats();
@@ -498,17 +688,38 @@
         function checkAndIncrementTotal() {
             const kidData = data[currentKid];
             const today = getToday();
+            const todayKey = getDateKey(new Date());
             
-            // 检查昨天是否全部完成，如果完成了已经算过了
             if (kidData.lastDate !== today) {
-                const wasAllCompleted = isAllCompleted(kidData.today);
-                if (wasAllCompleted && kidData.lastDate !== null) {
-                    // 只有昨天全部完成，才加一天
+                // 如果之前那天已经提交了并且完成了，就累计
+                if (kidData.lastDate && kidData.submitted && isAllCompleted(kidData.today)) {
+                    const lastDate = new Date(kidData.lastDate);
+                    const lastKey = getDateKey(lastDate);
+                    kidData.history[lastKey] = true;
                     kidData.totalDays++;
                 }
                 kidData.lastDate = today;
                 kidData.today = {};
+                kidData.submitted = false;
                 saveData();
+            }
+        }
+
+        // 提交今日打卡
+        function submitToday() {
+            const kidData = data[currentKid];
+            if (!isAllCompleted(kidData.today)) {
+                alert('还有作业没完成哦，全部完成后再提交吧！');
+                return;
+            }
+            if (confirm('确认提交今日打卡？提交后就不能修改了，只能重置。')) {
+                kidData.submitted = true;
+                const todayKey = getDateKey(new Date());
+                kidData.history[todayKey] = true;
+                kidData.totalDays++;
+                saveData();
+                render();
+                alert('🎉 今日打卡提交成功！继续坚持哦！');
             }
         }
 
@@ -533,6 +744,8 @@
         // 切换打卡状态
         function toggleItem(itemId) {
             const kidData = data[currentKid];
+            if (kidData.submitted) return;
+            
             const newState = !(kidData.today[itemId]);
             kidData.today[itemId] = newState;
             saveData();
@@ -549,8 +762,14 @@
 
         // 重置今日
         function resetToday() {
-            if (confirm('确定要重置今日所有打卡吗？')) {
+            if (confirm('确定要重置今日所有打卡吗？提交记录会清除。')) {
                 data[currentKid].today = {};
+                data[currentKid].submitted = false;
+                const todayKey = getDateKey(new Date());
+                delete data[currentKid].history[todayKey];
+                if (data[currentKid].totalDays > 0) {
+                    data[currentKid].totalDays--;
+                }
                 saveData();
                 render();
                 document.getElementById('encouragement').classList.remove('show');
@@ -715,92 +934,4 @@
                     bubble.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                     bubble.style.width = (10 + Math.random() * 25) + 'px';
                     bubble.style.height = bubble.style.width;
-                    bubble.style.setProperty('--tx', tx + 'px');
-                    bubble.style.setProperty('--ty', ty + 'px');
-                    
-                    container.appendChild(bubble);
-                    
-                    setTimeout(() => {
-                        if (container.contains(bubble)) container.removeChild(bubble);
-                    }, 2000);
-                }, i * 50);
-            }
-        }
-
-        // 点赞弹出效果
-        function createPopEffect(container) {
-            const messages = ['太棒了!', '做得好!', '完美!', '加油!', '厉害!', '👍', '🎉', '✨'];
-            const msg = messages[Math.floor(Math.random() * messages.length)];
-            
-            const pop = document.createElement('div');
-            pop.className = 'pop-yeah';
-            pop.textContent = msg;
-            pop.style.color = ['#fff', '#ffd700', '#ff6b6b', '#4ecdc4'][Math.floor(Math.random() * 4)];
-            container.appendChild(pop);
-            
-            // 周围再出一圈小星星
-            const stars = ['⭐', '✨', '💫'];
-            for (let i = 0; i < 12; i++) {
-                setTimeout(() => {
-                    const star = document.createElement('div');
-                    star.className = 'star-particle';
-                    star.textContent = stars[Math.floor(Math.random() * stars.length)];
-                    star.style.fontSize = (20 + Math.random() * 20) + 'px';
-                    
-                    const angle = (Math.PI * 2 * i) / 12;
-                    const distance = 100;
-                    const tx = Math.cos(angle) * distance;
-                    const ty = Math.sin(angle) * distance;
-                    const r = Math.random() * 360;
-                    
-                    star.style.left = (window.innerWidth / 2) + 'px';
-                    star.style.top = (window.innerHeight / 2) + 'px';
-                    star.style.setProperty('--tx', tx + 'px');
-                    star.style.setProperty('--ty', ty + 'px');
-                    star.style.setProperty('--r', r);
-                    
-                    container.appendChild(star);
-                    
-                    setTimeout(() => {
-                        if (star.parentNode) star.parentNode.removeChild(star);
-                    }, 1200);
-                }, i * 100);
-            }
-            
-            setTimeout(() => {
-                if (pop.parentNode) pop.parentNode.removeChild(pop);
-            }, 1200);
-        }
-
-        // 更新统计信息
-        function updateStats() {
-            const kidData = data[currentKid];
-            const name = config[currentKid].name;
-            document.getElementById('total-days').textContent = `${name} 累计打卡 ${kidData.totalDays} 天`;
-            
-            // 获取当前等级
-            const level = getLevel(kidData.totalDays);
-            document.body.className = '';
-            document.body.classList.add(`level-${level.level}`);
-            
-            const badgeContainer = document.getElementById('level-badge-container');
-            badgeContainer.innerHTML = `<div class="level-badge">${level.badge}</div>`;
-        }
-
-        // 获取等级
-        function getLevel(totalDays) {
-            for (let i = 0; i < levels.length; i++) {
-                if (totalDays >= levels[i].min && totalDays <= levels[i].max) {
-                    return levels[i];
-                }
-            }
-            return levels[0];
-        }
-
-        // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            render();
-        });
-    </script>
-</body>
-</html>
+                    bubble.style.setProperty('--tx', tx + 'px
