@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>👧 秀秀 & 小妍 作业打卡</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 1s ease;
+        }
+
+        /* 不同累计天数的主题色 */
+        body.level-0 { background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); }
+        body.level-1 { background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); }
+        body.level-2 { background: linear-gradient(135deg, #55efc4 0%, #00b894 100%); }
+        body.level-3 { background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%); }
+        body.level-4 { background: linear-gradient(135deg, #fab1a0 0%, #e17055 100%); }
+        body.level-5 { background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%); }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .kid-switch {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .kid-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .kid-btn.xiuxiu {
+            background: #ffebee;
+            color: #e91e63;
+        }
+
+        .kid-btn.xiaoyan {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .kid-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .checklist {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 12px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 3px solid transparent;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        .check-item:hover {
+            transform: translateX(5px);
+        }
+
+        .check-item:active {
+            transform: scale(0.98);
+        }
+
+        .check-item.checked {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .check-box {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #ddd;
+            border-radius: 8px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .check-item.checked .check-box {
+            background: #4caf50;
+            border-color: #4caf50;
+            color: white;
+        }
+
+        .check-text {
+            flex: 1;
+            font-size: 18px;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .check-item.checked .check-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .special-item {
+            background: #fff3e0 !important;
+            border-left: 5px solid #ff9800;
+        }
+
+        .encouragement {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff9ff3 0%, #f368e0 100%);
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .encouragement.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .encouragement-text {
+            font-size: 20px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #ff9800;
+            color: white;
+            font-size: 12px;
+            border-radius: 20px;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+
+        .reset-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .reset-btn:hover {
+            background: #ff5252;
+        }
+
+        /* 礼花特效容器 - 保证不阻挡点击 */
+        #fireworks {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            touch-action: none;
+        }
+
+        .firework-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: explode 1.5s ease-out forwards;
+        }
+
+        .star-particle {
+            position: absolute;
+            font-size: 24px;
+            animation: starFall 2s ease-out forwards;
+        }
+
+        .confetti-particle {
+            position: absolute;
+            width: 8px;
+            height: 16px;
+            animation: confettiFall 1.8s ease-out forwards;
+        }
+
+        .bubble-particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: bubbleRise 2s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes starFall {
+            0% {
+                transform: translate(0, 0) scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(1) rotate(var(--r)deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), calc(var(--ty) + 200px)) rotate(var(--r)deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes bubbleRise {
+            0% {
+                transform: translate(0, 0) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), calc(var(--ty) - 300px)) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* 点赞飞屏效果 */
+        .pop-yeah {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 80px;
+            z-index: 10000;
+            pointer-events: none;
+            animation: yeahPop 1.2s ease-out forwards;
+        }
+
+        @keyframes yeahPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
+        }
+
+        .level-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .today-clear {
+            text-align: center;
+            padding: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            color: #2e7d32;
+            font-weight: bold;
+            display: none;
+        }
+
+        .today-clear.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="level-0">
+    <div id="fireworks"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 作业打卡 🌟</h1>
+            <div class="stats">
+                <span id="total-days"></span>
+                <div id="level-badge-container"></div>
+            </div>
+        </div>
+
+        <div class="kid-switch">
+            <button class="kid-btn xiuxiu active" data-kid="xiuxiu" onclick="switchKid('xiuxiu')">👧 秀秀</button>
+            <button class="kid-btn xiaoyan" data-kid="xiaoyan" onclick="switchKid('xiaoyan')">👧 小妍</button>
+        </div>
+
+        <div class="checklist">
+            <div id="today-clear" class="today-clear">🎉 今日全部完成！太棒了！🎉</div>
+            <div id="check-items"></div>
+            <button class="reset-btn" onclick="resetToday()">🔄 重置今日打卡</button>
+        </div>
+
+        <div class="encouragement" id="encouragement">
+            <div class="encouragement-text" id="encouragement-text"></div>
+        </div>
+    </div>
+
+    <script>
+        // 配置数据
+        const config = {
+            xiuxiu: {
+                name: '秀秀',
+                items: [
+                    { id: 'math', name: '数学', special: false },
+                    { id: 'chinese', name: '语文', special: false },
+                    { id: 'denny-english', name: 'Denny英语', special: true },
+                    { id: 'lantian-chinese', name: '蓝天语文', special: true },
+                    { id: 'chorus', name: '合唱', special: false }
+                ]
+            },
+            xiaoyan: {
+                name: '小妍',
+                items: [
+                    { id: 'math', name: '数学', special: false },
+                    { id: 'chinese', name: '语文', special: false },
+                    { id: 'english', name: '英语', special: false },
+                    { id: 'rainbow-english', name: 'Rainbow英语', special: true },
+                    { id: 'dance', name: '舞蹈', special: false },
+                    { id: 'violin', name: '小提琴', special: false }
+                ]
+            }
+        };
+
+        // 鼓励文案
+        const encouragements = [
+            '太棒了！完成得真漂亮！🎉',
+            '你真棒！继续加油！💪',
+            '哇！今天也完成了，太厉害啦！✨',
+            '完美！你就是最棒的！🏆',
+            '太棒啦！离目标更近一步了！🎯',
+            '做得好！继续保持！⭐',
+            '天才就是日复一日的坚持！💯',
+            '又进步了一天！真了不起！🌹',
+            '打卡成功！你太优秀了！🌈',
+            '坚持就是胜利！为你骄傲！👍'
+        ];
+
+        // 等级配置
+        const levels = [
+            { min: 0, max: 10, badge: '🌱 新手启程', level: 0 },
+            { min: 11, max: 30, badge: '🌿 坚持之星', level: 1 },
+            { min: 31, max: 60, badge: '🌳 习惯养成', level: 2 },
+            { min: 61, max: 100, badge: '💎 坚持不懈', level: 3 },
+            { min: 101, max: 200, badge: '🔥 超级自律', level: 4 },
+            { min: 201, max: 9999, badge: '👑 传奇打卡王', level: 5 }
+        ];
+
+        let currentKid = 'xiuxiu';
+        let data = loadData();
+
+        // 加载数据
+        function loadData() {
+            const saved = localStorage.getItem('homeworkCheckData');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            return {
+                xiuxiu: { totalDays: 0, lastDate: null, today: {} },
+                xiaoyan: { totalDays: 0, lastDate: null, today: {} }
+            };
+        }
+
+        // 保存数据
+        function saveData() {
+            localStorage.setItem('homeworkCheckData', JSON.stringify(data));
+        }
+
+        // 获取今天日期字符串
+        function getToday() {
+            return new Date().toDateString();
+        }
+
+        // 切换孩子
+        function switchKid(kid) {
+            currentKid = kid;
+            document.querySelectorAll('.kid-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-kid="${kid}"]`).classList.add('active');
+            render();
+        }
+
+        // 渲染清单
+        function render() {
+            const kidData = data[currentKid];
+            const items = config[currentKid].items;
+            const today = getToday();
+
+            // 如果日期变了，重置今日状态，如果全部完成过就累计天数
+            if (kidData.lastDate !== today) {
+                checkAndIncrementTotal();
+            }
+
+            // 渲染项目
+            const container = document.getElementById('check-items');
+            container.innerHTML = '';
+            
+            items.forEach(item => {
+                const isChecked = kidData.today[item.id] || false;
+                const div = document.createElement('div');
+                div.className = `check-item ${isChecked ? 'checked' : ''} ${item.special ? 'special-item' : ''}`;
+                div.innerHTML = `
+                    <div class="check-box">${isChecked ? '✓' : ''}</div>
+                    <div class="check-text">
+                        ${item.name}
+                        ${item.special ? '<span class="badge">特色课</span>' : ''}
+                    </div>
+                `;
+                div.onclick = () => toggleItem(item.id);
+                container.appendChild(div);
+            });
+
+            // 更新统计
+            updateStats();
+
+            // 检查是否今日全部完成
+            checkAllCompleted();
+        }
+
+        // 检查并增加总天数
+        function checkAndIncrementTotal() {
+            const kidData = data[currentKid];
+            const today = getToday();
+            
+            // 检查昨天是否全部完成，如果完成了已经算过了
+            if (kidData.lastDate !== today) {
+                const wasAllCompleted = isAllCompleted(kidData.today);
+                if (wasAllCompleted && kidData.lastDate !== null) {
+                    // 只有昨天全部完成，才加一天
+                    kidData.totalDays++;
+                }
+                kidData.lastDate = today;
+                kidData.today = {};
+                saveData();
+            }
+        }
+
+        // 检查是否全部完成
+        function isAllCompleted(todayData) {
+            const items = config[currentKid].items;
+            return items.every(item => todayData[item.id]);
+        }
+
+        // 检查并显示全部完成提示
+        function checkAllCompleted() {
+            const kidData = data[currentKid];
+            const allCompleted = isAllCompleted(kidData.today);
+            const indicator = document.getElementById('today-clear');
+            if (allCompleted && Object.keys(kidData.today).length > 0) {
+                indicator.classList.add('show');
+            } else {
+                indicator.classList.remove('show');
+            }
+        }
+
+        // 切换打卡状态
+        function toggleItem(itemId) {
+            const kidData = data[currentKid];
+            const newState = !(kidData.today[itemId]);
+            kidData.today[itemId] = newState;
+            saveData();
+            render();
+
+            if (newState) {
+                // 打卡成功，显示鼓励和特效
+                showRandomEncouragement();
+                createFireworks();
+            }
+
+            checkAllCompleted();
+        }
+
+        // 重置今日
+        function resetToday() {
+            if (confirm('确定要重置今日所有打卡吗？')) {
+                data[currentKid].today = {};
+                saveData();
+                render();
+                document.getElementById('encouragement').classList.remove('show');
+            }
+        }
+
+        // 显示随机鼓励
+        function showRandomEncouragement() {
+            const randomIndex = Math.floor(Math.random() * encouragements.length);
+            document.getElementById('encouragement-text').textContent = encouragements[randomIndex];
+            const encouragementDiv = document.getElementById('encouragement');
+            encouragementDiv.classList.remove('show');
+            setTimeout(() => {
+                encouragementDiv.classList.add('show');
+            }, 10);
+        }
+
+        // 多种特效类型
+        const effectTypes = ['fireworks', 'stars', 'confetti', 'bubbles', 'pop'];
+
+        // 创建随机特效
+        function createFireworks() {
+            const container = document.getElementById('fireworks');
+            container.innerHTML = '';
+            
+            // 随机选一种特效
+            const effectType = effectTypes[Math.floor(Math.random() * effectTypes.length)];
+            
+            switch(effectType) {
+                case 'fireworks':
+                    createFireworksEffect(container);
+                    break;
+                case 'stars':
+                    createStarsEffect(container);
+                    break;
+                case 'confetti':
+                    createConfettiEffect(container);
+                    break;
+                case 'bubbles':
+                    createBubblesEffect(container);
+                    break;
+                case 'pop':
+                    createPopEffect(container);
+                    break;
+            }
+        }
+
+        // 经典礼花爆炸效果
+        function createFireworksEffect(container) {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#a29bfe', '#ffe066'];
+            const particleCount = 40;
+            
+            // 单层爆炸，更轻盈
+            for (let i = 0; i < particleCount; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'firework-particle';
+                    
+                    const angle = (Math.PI * 2 * i) / particleCount;
+                    const distance = 80 + Math.random() * 150;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    
+                    const centerX = window.innerWidth / 2 + (Math.random() - 0.5) * 150;
+                    const centerY = window.innerHeight / 2 + (Math.random() - 0.5) * 80;
+                    
+                    particle.style.left = centerX + 'px';
+                    particle.style.top = centerY + 'px';
+                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.width = (4 + Math.random() * 6) + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.setProperty('--tx', tx + 'px');
+                    particle.style.setProperty('--ty', ty + 'px');
+                    
+                    container.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode && particle.parentNode.contains(particle)) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 1500);
+                }, i * 20);
+            }
+        }
+
+        // 星星坠落效果
+        function createStarsEffect(container) {
+            const stars = ['⭐', '🌟', '💫', '✨', '💖'];
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 3;
+            
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const star = document.createElement('div');
+                    star.className = 'star-particle';
+                    star.textContent = stars[Math.floor(Math.random() * stars.length)];
+                    
+                    const tx = (Math.random() - 0.5) * 400;
+                    const ty = 200 + Math.random() * 300;
+                    const r = Math.random() * 360;
+                    
+                    star.style.left = centerX + 'px';
+                    star.style.top = centerY + 'px';
+                    star.style.setProperty('--tx', tx + 'px');
+                    star.style.setProperty('--ty', ty + 'px');
+                    star.style.setProperty('--r', r);
+                    
+                    container.appendChild(star);
+                    
+                    setTimeout(() => {
+                        if (container.contains(star)) container.removeChild(star);
+                    }, 2000);
+                }, i * 100);
+            }
+        }
+
+        // 彩纸飘落效果
+        function createConfettiEffect(container) {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#a29bfe', '#ffe066', '#ff9ff3'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti-particle';
+                    
+                    const tx = (Math.random() - 0.5) * 500;
+                    const ty = 150 + Math.random() * 400;
+                    const r = Math.random() * 360;
+                    
+                    confetti.style.left = (Math.random() * window.innerWidth) + 'px';
+                    confetti.style.top = '-20px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.setProperty('--tx', tx + 'px');
+                    confetti.style.setProperty('--ty', ty + 'px');
+                    confetti.style.setProperty('--r', r);
+                    confetti.style.transform = `rotate(${r}deg)`;
+                    
+                    container.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        if (confetti.parentNode) confetti.parentNode.removeChild(confetti);
+                    }, 1800);
+                }, i * 40);
+            }
+        }
+
+        // 泡泡上升效果
+        function createBubblesEffect(container) {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#a29bfe', '#fd79a8', '#ffe066'];
+            const centerX = window.innerWidth / 2;
+            
+            for (let i = 0; i < 25; i++) {
+                setTimeout(() => {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble-particle';
+                    
+                    const tx = (Math.random() - 0.5) * 300;
+                    const ty = -200 - Math.random() * 200;
+                    
+                    bubble.style.left = centerX + 'px';
+                    bubble.style.bottom = '0px';
+                    bubble.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    bubble.style.width = (10 + Math.random() * 25) + 'px';
+                    bubble.style.height = bubble.style.width;
+                    bubble.style.setProperty('--tx', tx + 'px');
+                    bubble.style.setProperty('--ty', ty + 'px');
+                    
+                    container.appendChild(bubble);
+                    
+                    setTimeout(() => {
+                        if (container.contains(bubble)) container.removeChild(bubble);
+                    }, 2000);
+                }, i * 50);
+            }
+        }
+
+        // 点赞弹出效果
+        function createPopEffect(container) {
+            const messages = ['太棒了!', '做得好!', '完美!', '加油!', '厉害!', '👍', '🎉', '✨'];
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            
+            const pop = document.createElement('div');
+            pop.className = 'pop-yeah';
+            pop.textContent = msg;
+            pop.style.color = ['#fff', '#ffd700', '#ff6b6b', '#4ecdc4'][Math.floor(Math.random() * 4)];
+            container.appendChild(pop);
+            
+            // 周围再出一圈小星星
+            const stars = ['⭐', '✨', '💫'];
+            for (let i = 0; i < 12; i++) {
+                setTimeout(() => {
+                    const star = document.createElement('div');
+                    star.className = 'star-particle';
+                    star.textContent = stars[Math.floor(Math.random() * stars.length)];
+                    star.style.fontSize = (20 + Math.random() * 20) + 'px';
+                    
+                    const angle = (Math.PI * 2 * i) / 12;
+                    const distance = 100;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    const r = Math.random() * 360;
+                    
+                    star.style.left = (window.innerWidth / 2) + 'px';
+                    star.style.top = (window.innerHeight / 2) + 'px';
+                    star.style.setProperty('--tx', tx + 'px');
+                    star.style.setProperty('--ty', ty + 'px');
+                    star.style.setProperty('--r', r);
+                    
+                    container.appendChild(star);
+                    
+                    setTimeout(() => {
+                        if (star.parentNode) star.parentNode.removeChild(star);
+                    }, 1200);
+                }, i * 100);
+            }
+            
+            setTimeout(() => {
+                if (pop.parentNode) pop.parentNode.removeChild(pop);
+            }, 1200);
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const kidData = data[currentKid];
+            const name = config[currentKid].name;
+            document.getElementById('total-days').textContent = `${name} 累计打卡 ${kidData.totalDays} 天`;
+            
+            // 获取当前等级
+            const level = getLevel(kidData.totalDays);
+            document.body.className = '';
+            document.body.classList.add(`level-${level.level}`);
+            
+            const badgeContainer = document.getElementById('level-badge-container');
+            badgeContainer.innerHTML = `<div class="level-badge">${level.badge}</div>`;
+        }
+
+        // 获取等级
+        function getLevel(totalDays) {
+            for (let i = 0; i < levels.length; i++) {
+                if (totalDays >= levels[i].min && totalDays <= levels[i].max) {
+                    return levels[i];
+                }
+            }
+            return levels[0];
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            render();
+        });
+    </script>
+</body>
+</html>
