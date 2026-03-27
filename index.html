@@ -719,22 +719,33 @@ function checkAndResetToday() {
 // 提交今日打卡
 function submitToday() {
     const kidData = data[currentKid];
-    if (!isAllCompleted(kidData.today)) {
-        alert('还有作业没完成哦，全部完成后再提交吧！');
-        return;
+    const items = config[currentKid].items;
+    const uncompletedCount = items.filter(item => !kidData.today[item.id]).length;
+    
+    // 如果还有未完成的作业，弹出确认框询问
+    if (uncompletedCount > 0) {
+        if (!confirm(`还有 ${uncompletedCount} 项作业未完成，确定要提交今日打卡吗？`)) {
+            // 用户点击取消，不提交
+            return;
+        }
+        // 用户点击确认，继续提交流程
+    } else {
+        // 全部完成，正常确认提交
+        if (!confirm('确认提交今日打卡？提交后就不能修改了，只能重置。')) {
+            return;
+        }
     }
-    if (confirm('确认提交今日打卡？提交后就不能修改了，只能重置。')) {
-        kidData.submitted = true;
-        const todayKey = getDateKey(new Date());
-        kidData.history[todayKey] = true;
-        // 提交的时候只增加一次，避免重复计数
-        kidData.totalDays++;
-        saveData();
-        render();
-        showRandomEncouragement();
-        createFireworks();
-        alert('🎉 今日打卡提交成功！继续坚持哦！');
-    }
+    
+    kidData.submitted = true;
+    const todayKey = getDateKey(new Date());
+    kidData.history[todayKey] = true;
+    // 提交的时候只增加一次，避免重复计数
+    kidData.totalDays++;
+    saveData();
+    render();
+    showRandomEncouragement();
+    createFireworks();
+    alert('🎉 今日打卡提交成功！继续坚持哦！');
 }
 
 // 检查是否全部完成
