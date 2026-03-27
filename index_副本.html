@@ -787,22 +787,133 @@
             }, 10);
         }
 
-        // 更新统计信息和等级
-        function updateStats() {
-            const kidData = data[currentKid];
-            document.getElementById('total-days').textContent = `累计打卡 ${kidData.totalDays} 天`;
+        // 多种特效类型
+        const effectTypes = ['fireworks', 'stars', 'confetti', 'bubbles', 'pop'];
+
+        // 创建随机特效
+        function createFireworks() {
+            const container = document.getElementById('fireworks');
+            container.innerHTML = '';
             
-            // 计算当前等级
-            const currentLevelInfo = levels.find(l => kidData.totalDays >= l.min && kidData.totalDays <= l.max);
-            // 设置主题色
-            document.body.className = '';
-            document.body.classList.add(`level-${currentLevelInfo.level}`);
+            // 随机选一种特效
+            const effectType = effectTypes[Math.floor(Math.random() * effectTypes.length)];
             
-            // 显示等级徽章
-            const container = document.getElementById('level-badge-container');
-            container.innerHTML = `<div class="level-badge">${currentLevelInfo.badge}</div>`;
+            switch(effectType) {
+                case 'fireworks':
+                    createFireworksEffect(container);
+                    break;
+                case 'stars':
+                    createStarsEffect(container);
+                    break;
+                case 'confetti':
+                    createConfettiEffect(container);
+                    break;
+                case 'bubbles':
+                    createBubblesEffect(container);
+                    break;
+                case 'pop':
+                    createPopEffect(container);
+                    break;
+            }
+        }
+
+        // 经典礼花爆炸效果
+        function createFireworksEffect(container) {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#a29bfe', '#ffe066'];
+            const particleCount = 40;
             
-            renderCalendar();
+            // 单层爆炸，更轻盈
+            for (let i = 0; i < particleCount; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'firework-particle';
+                    
+                    const angle = (Math.PI * 2 * i) / particleCount;
+                    const distance = 80 + Math.random() * 150;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    
+                    const centerX = window.innerWidth / 2 + (Math.random() - 0.5) * 150;
+                    const centerY = window.innerHeight / 2 + (Math.random() - 0.5) * 80;
+                    
+                    particle.style.left = centerX + 'px';
+                    particle.style.top = centerY + 'px';
+                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.width = (4 + Math.random() * 6) + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.setProperty('--tx', tx + 'px');
+                    particle.style.setProperty('--ty', ty + 'px');
+                    
+                    container.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode && particle.parentNode.contains(particle)) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 1500);
+                }, i * 20);
+            }
+        }
+
+        // 星星坠落效果
+        function createStarsEffect(container) {
+            const stars = ['⭐', '🌟', '💫', '✨', '💖'];
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 3;
+            
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const star = document.createElement('div');
+                    star.className = 'star-particle';
+                    star.textContent = stars[Math.floor(Math.random() * stars.length)];
+                    
+                    const tx = (Math.random() - 0.5) * 400;
+                    const ty = 200 + Math.random() * 300;
+                    const r = Math.random() * 360;
+                    
+                    star.style.left = centerX + 'px';
+                    star.style.top = centerY + 'px';
+                    star.style.setProperty('--tx', tx + 'px');
+                    star.style.setProperty('--ty', ty + 'px');
+                    star.style.setProperty('--r', r);
+                    
+                    container.appendChild(star);
+                    
+                    setTimeout(() => {
+                        if (container.contains(star)) container.removeChild(star);
+                    }, 2000);
+                }, i * 100);
+            }
+        }
+
+        // 彩纸飘落效果
+        function createConfettiEffect(container) {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#a29bfe', '#ffe066', '#ff9ff3'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti-particle';
+                    
+                    const tx = (Math.random() - 0.5) * 500;
+                    const ty = 150 + Math.random() * 400;
+                    const r = Math.random() * 360;
+                    
+                    confetti.style.left = (Math.random() * window.innerWidth) + 'px';
+                    confetti.style.top = '-20px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.setProperty('--tx', tx + 'px');
+                    confetti.style.setProperty('--ty', ty + 'px');
+                    confetti.style.setProperty('--r', r);
+                    confetti.style.transform = `rotate(${r}deg)`;
+                    
+                    container.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        if (confetti.parentNode) confetti.parentNode.removeChild(confetti);
+                    }, 1800);
+                }, i * 40);
+            }
         }
 
         // 泡泡上升效果
@@ -823,117 +934,4 @@
                     bubble.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                     bubble.style.width = (10 + Math.random() * 25) + 'px';
                     bubble.style.height = bubble.style.width;
-                    bubble.style.setProperty('--tx', tx + 'px');
-                    bubble.style.setProperty('--ty', ty + 'px');
-                    
-                    container.appendChild(bubble);
-                    
-                    setTimeout(() => {
-                        if (container.contains(bubble)) container.removeChild(bubble);
-                    }, 2000);
-                }, i * 50);
-            }
-        }
-
-        // 点赞飞屏效果
-        function createPopEffect(container) {
-            const yeahs = ['👍', '👏', '🎉', '✨', '💯'];
-            const yeah = document.createElement('div');
-            yeah.className = 'pop-yeah';
-            yeah.textContent = yeahs[Math.floor(Math.random() * yeahs.length)];
-            yeah.style.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-            container.appendChild(yeah);
-            setTimeout(() => {
-                if (container.contains(yeah)) container.removeChild(yeah);
-            }, 1200);
-        }
-
-        // 打开日历
-        function openCalendar() {
-            currentCalendarDate = new Date();
-            document.getElementById('calendar-modal').classList.add('show');
-            renderCalendar();
-        }
-
-        // 关闭日历
-        function closeCalendar() {
-            document.getElementById('calendar-modal').classList.remove('show');
-        }
-
-        // 上一月
-        function prevMonth() {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-            renderCalendar();
-        }
-
-        // 下一月
-        function nextMonth() {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-            renderCalendar();
-        }
-
-        // 渲染日历
-        function renderCalendar() {
-            const year = currentCalendarDate.getFullYear();
-            const month = currentCalendarDate.getMonth();
-            document.getElementById('calendar-month').textContent = `${year}年${month + 1}月`;
-            
-            const grid = document.getElementById('calendar-grid');
-            grid.innerHTML = '';
-            
-            // 星期标题
-            weekDays.forEach(d => {
-                const div = document.createElement('div');
-                div.className = 'calendar-weekday';
-                div.textContent = d;
-                grid.appendChild(div);
-            });
-            
-            // 计算本月第一天是星期几
-            const firstDay = new Date(year, month, 1);
-            const startingDay = firstDay.getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            
-            // 补前面空白天
-            for (let i = 0; i < startingDay; i++) {
-                const div = document.createElement('div');
-                div.className = 'calendar-day empty';
-                grid.appendChild(div);
-            }
-            
-            // 渲染日期
-            const todayKey = getDateKey(new Date());
-            const kidData = data[currentKid];
-            for (let day = 1; day <= daysInMonth; day++) {
-                const div = document.createElement('div');
-                div.className = 'calendar-day';
-                div.textContent = day;
-                
-                const checkDate = new Date(year, month, day);
-                const dateKey = getDateKey(checkDate);
-                if (kidData.history[dateKey]) {
-                    div.classList.add('checked');
-                }
-                
-                if (dateKey === todayKey) {
-                    div.classList.add('today');
-                }
-                
-                grid.appendChild(div);
-            }
-        }
-
-        // 更新等级主题
-        function updateLevelTheme() {
-            const kidData = data[currentKid];
-            const currentLevelInfo = levels.find(l => kidData.totalDays >= l.min && kidData.totalDays <= l.max);
-            document.body.className = '';
-            document.body.classList.add(`level-${currentLevelInfo.level}`);
-        }
-
-        // 初始化
-        updateLevelTheme();
-        render();
-    </script>
-</body>
-</html>
+                    bubble.style.setProperty('--tx', tx + 'px
