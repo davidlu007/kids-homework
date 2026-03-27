@@ -480,6 +480,91 @@
             border-radius: 10px;
             cursor: pointer;
         }
+
+        /* 自定义确认弹窗 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: 85%;
+            max-width: 400px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+
+        .modal-message {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-cancel {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+
+        .modal-btn-cancel:active {
+            background: #e8e8e8;
+        }
+
+        .modal-btn-confirm {
+            background: #4caf50;
+            color: white;
+        }
+
+        .modal-btn-confirm:active {
+            background: #388e3c;
+        }
     </style>
 </head>
 <body class="level-0">
@@ -528,7 +613,22 @@
         </div>
     </div>
 
+    <!-- 自定义确认弹窗 -->
+    <div class="modal-overlay" id="custom-modal" onclick="closeCustomModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 class="modal-title" id="modal-title"></h3>
+            <p class="modal-message" id="modal-message"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeCustomModal()">取消</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmCustomModal()">确定</button>
+            </div>
+        </div>
+    </div>
+
 <script>
+// 弹窗全局回调保存
+let modalConfirmCallback = null;
+
 // 配置数据
 const config = {
     xiuxiu: {
@@ -716,6 +816,28 @@ function checkAndResetToday() {
     }
 }
 
+// 打开自定义弹窗
+function openCustomModal(title, message, callback) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-message').textContent = message;
+    modalConfirmCallback = callback;
+    document.getElementById('custom-modal').classList.add('show');
+}
+
+// 关闭自定义弹窗
+function closeCustomModal() {
+    document.getElementById('custom-modal').classList.remove('show');
+    modalConfirmCallback = null;
+}
+
+// 确认弹窗
+function confirmCustomModal() {
+    if (modalConfirmCallback) {
+        modalConfirmCallback();
+    }
+    closeCustomModal();
+}
+
 // 提交今日打卡
 function submitToday() {
     const kidData = data[currentKid];
@@ -724,28 +846,31 @@ function submitToday() {
     
     // 如果还有未完成的作业，弹出确认框询问
     if (uncompletedCount > 0) {
-        if (!confirm(`还有 ${uncompletedCount} 项作业未完成，确定要提交今日打卡吗？`)) {
-            // 用户点击取消，不提交
-            return;
-        }
-        // 用户点击确认，继续提交流程
+        openCustomModal('确认提交', `还有 ${uncompletedCount} 项作业未完成，确定要提交今日打卡吗？`, () => {
+            // 用户点击确认，继续提交流程
+            doSubmit();
+        });
     } else {
         // 全部完成，正常确认提交
-        if (!confirm('确认提交今日打卡？提交后就不能修改了，只能重置。')) {
-            return;
-        }
+        openCustomModal('确认提交', '确认提交今日打卡？提交后就不能修改了，只能重置。', () => {
+            doSubmit();
+        });
     }
     
-    kidData.submitted = true;
-    const todayKey = getDateKey(new Date());
-    kidData.history[todayKey] = true;
-    // 提交的时候只增加一次，避免重复计数
-    kidData.totalDays++;
-    saveData();
-    render();
-    showRandomEncouragement();
-    createFireworks();
-    alert('🎉 今日打卡提交成功！继续坚持哦！');
+    function doSubmit() {
+        kidData.submitted = true;
+        const todayKey = getDateKey(new Date());
+        kidData.history[todayKey] = true;
+        // 提交的时候只增加一次，避免重复计数
+        kidData.totalDays++;
+        saveData();
+        render();
+        showRandomEncouragement();
+        createFireworks();
+        setTimeout(() => {
+            alert('🎉 今日打卡提交成功！继续坚持哦！');
+        }, 300);
+    }
 }
 
 // 检查是否全部完成
@@ -787,7 +912,7 @@ function toggleItem(itemId) {
 
 // 重置今日
 function resetToday() {
-    if (confirm('确定要重置今日所有打卡吗？提交记录会清除。')) {
+    openCustomModal('确认重置', '确定要重置今日所有打卡吗？提交记录会清除。', () => {
         const kidData = data[currentKid];
         const wasSubmitted = kidData.submitted;
         kidData.today = {};
@@ -800,7 +925,7 @@ function resetToday() {
         saveData();
         render();
         document.getElementById('encouragement').classList.remove('show');
-    }
+    });
 }
 
 // 显示随机鼓励
